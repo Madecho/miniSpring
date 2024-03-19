@@ -13,6 +13,7 @@ import com.mini.core.Resource;
  * 解析 XML 文件中的内容。
  * 加载解析的内容，构建 BeanDefinition。
  * 读取 BeanDefinition 的配置信息，实例化 Bean，然后把它注入到 BeanFactory 容器中。
+ *
  */
 
 public class ClassPathXmlApplicationContext implements BeanFactory {

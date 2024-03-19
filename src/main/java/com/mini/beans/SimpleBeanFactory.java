@@ -41,6 +41,7 @@ public class SimpleBeanFactory implements BeanFactory{
      * 问：SimpleBeanFactory 为什么是在getBean时才注册实例，而不是registerBeanDefinition就先注册呢？
      * 分开成两阶段，registerBeanDefinition仅仅只是处理bean的定义，不处理实例
      * @param beanDefinition
+     *
      */
     public void registerBeanDefinition(BeanDefinition beanDefinition) {
         this.beanDefinitions.add(beanDefinition);

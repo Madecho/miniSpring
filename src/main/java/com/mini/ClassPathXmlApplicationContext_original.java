@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *
  * 这时的 ClassPathXmlApplicationContext 承担了太多的功能，这并不符合我们常说的对象单一功能的原则。
  * 因此，我们需要做的优化扩展工作也就呼之欲出了：分解这个类，主要工作就是两个部分，一是提出一个最基础
  * 的核心容器，二是把 XML 这些外部配置信息的访问单独剥离出去，现在我们只有 XML 这一种方式，但是之后还
