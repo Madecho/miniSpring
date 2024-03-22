@@ -1,4 +1,4 @@
-package com.mini.core;
+package com.minis.core;
 
 import org.dom4j.*;
 import org.dom4j.io.SAXReader;
