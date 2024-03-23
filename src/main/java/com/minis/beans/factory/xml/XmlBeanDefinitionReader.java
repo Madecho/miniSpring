@@ -1,4 +1,4 @@
-package com.minis.beans;
+package com.minis.beans.factory.xml;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -8,11 +8,17 @@ import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 
+import com.minis.beans.PropertyValue;
+import com.minis.beans.PropertyValues;
+import com.minis.beans.factory.config.BeanDefinition;
+import com.minis.beans.factory.config.ConstructorArgumentValue;
+import com.minis.beans.factory.config.ConstructorArgumentValues;
+import com.minis.beans.factory.support.AbstractBeanFactory;
 import com.minis.core.Resource;
 
 public class XmlBeanDefinitionReader {
-    SimpleBeanFactory bf;
-    public XmlBeanDefinitionReader(SimpleBeanFactory bf) {
+    AbstractBeanFactory bf;
+    public XmlBeanDefinitionReader(AbstractBeanFactory bf) {
         this.bf = bf;
     }
     public void loadBeanDefinitions(Resource res) {
@@ -20,17 +26,18 @@ public class XmlBeanDefinitionReader {
             Element element = (Element)res.next();
             String beanID=element.attributeValue("id");
             String beanClassName=element.attributeValue("class");
+            String initMethodName=element.attributeValue("init-method");
 
             BeanDefinition beanDefinition=new BeanDefinition(beanID,beanClassName);
 
             //get constructor
             List<Element> constructorElements = element.elements("constructor-arg");
-            ArgumentValues AVS = new ArgumentValues();
+            ConstructorArgumentValues AVS = new ConstructorArgumentValues();
             for (Element e : constructorElements) {
                 String pType = e.attributeValue("type");
                 String pName = e.attributeValue("name");
                 String pValue = e.attributeValue("value");
-                AVS.addArgumentValue(new ArgumentValue(pType,pName,pValue));
+                AVS.addArgumentValue(new ConstructorArgumentValue(pType,pName,pValue));
             }
             beanDefinition.setConstructorArgumentValues(AVS);
             //end of handle constructor
@@ -60,6 +67,8 @@ public class XmlBeanDefinitionReader {
             String[] refArray = refs.toArray(new String[0]);
             beanDefinition.setDependsOn(refArray);
             //end of handle properties
+
+            beanDefinition.setInitMethodName(initMethodName);
 
             this.bf.registerBeanDefinition(beanID,beanDefinition);
         }

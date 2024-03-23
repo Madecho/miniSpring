@@ -1,5 +1,7 @@
-package com.minis.beans;
+package com.minis.beans.factory;
 
+
+import com.minis.beans.BeansException;
 
 /**
  * 拆出一个基础的容器来，刚才我们反复提到了 BeanFactory 这个词，现在我们正式引入 BeanFactory 这个接口，

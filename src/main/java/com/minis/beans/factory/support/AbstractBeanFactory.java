@@ -1,4 +1,4 @@
-package com.minis.beans;
+package com.minis.beans.factory.support;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -9,12 +9,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory,BeanDefinitionRegistry{
+import com.minis.beans.BeansException;
+import com.minis.beans.PropertyValue;
+import com.minis.beans.PropertyValues;
+import com.minis.beans.factory.BeanFactory;
+import com.minis.beans.factory.config.BeanDefinition;
+import com.minis.beans.factory.config.ConstructorArgumentValue;
+import com.minis.beans.factory.config.ConstructorArgumentValues;
+
+public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory,BeanDefinitionRegistry{
     private Map<String,BeanDefinition> beanDefinitionMap=new ConcurrentHashMap<>(256);
     private List<String> beanDefinitionNames=new ArrayList<>();
     private final Map<String, Object> earlySingletonObjects = new HashMap<String, Object>(16);
 
-    public SimpleBeanFactory() {
+    public AbstractBeanFactory() {
     }
 
     public void refresh() {
@@ -27,15 +35,6 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
         }
     }
 
-    /**
-     * 在 getBean() 方法中，首先要判断有没有已经创建好的 bean，有的话直接取出来，如果没有就检查 earlySingletonObjects
-     * 中有没有相应的毛胚 Bean，有的话直接取出来，没有的话就去创建，并且会根据 Bean 之间的依赖关系把相关的 Bean 全部创建好。
-     * 很多资料把这个过程叫做 bean 的“三级缓存”，这个术语来自于 Spring 源代码中的程序注释。实际上我们弄清楚了这个 getBean()
-     * 的过程后就会知道这段注释并不是很恰当。只不过这是 Spring 发明人自己写下的注释，大家也都这么称呼而已。
-     * @param beanName
-     * @return
-     * @throws BeansException
-     */
     public Object getBean(String beanName) throws BeansException{
         Object singleton = this.getSingleton(beanName);
 
@@ -49,9 +48,15 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
 
                 //beanpostprocessor
                 //step 1 : postProcessBeforeInitialization
-                //step 2 : afterPropertiesSet
-                //step 3 : init-method
-                //step 4 : postProcessAfterInitialization。
+                applyBeanPostProcessorsBeforeInitialization(singleton, beanName);
+
+                //step 2 : init-method
+                if (bd.getInitMethodName() != null && !bd.getInitMethodName().equals("")) {
+                    invokeInitMethod(bd, singleton);
+                }
+
+                //step 3 : postProcessAfterInitialization
+                applyBeanPostProcessorsAfterInitialization(singleton, beanName);
             }
 
         }
@@ -60,6 +65,28 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
         }
         return singleton;
     }
+
+    private void invokeInitMethod(BeanDefinition bd, Object obj) {
+        Class<?> clz = obj.getClass();
+        Method method = null;
+        try {
+            method = clz.getMethod(bd.getInitMethodName());
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+        try {
+            method.invoke(obj);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public boolean containsBean(String name) {
         return containsSingleton(name);
@@ -68,7 +95,6 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
     public void registerBean(String beanName, Object obj) {
         this.registerSingleton(beanName, obj);
 
-        //beanpostprocessor
     }
 
     @Override
@@ -118,12 +144,6 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
         return this.beanDefinitionMap.get(name).getClass();
     }
 
-    /**
-     * createBean() 方法中调用了一个 doCreateBean(bd) 方法，专门负责创建早期的毛胚实例。毛胚实例创建好后会放在
-     * earlySingletonObjects 结构中，然后 createBean() 方法再调用 handleProperties() 补齐这些 property 的值
-     * @param bd
-     * @return
-     */
     private Object createBean(BeanDefinition bd) {
         Class<?> clz = null;
         Object obj = doCreateBean(bd);
@@ -136,14 +156,11 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
             e.printStackTrace();
         }
 
-        handleProperties(bd, clz, obj);
+        populateBean(bd, clz, obj);
 
         return obj;
-
-
     }
 
-    //doCreateBean创建毛胚实例，仅仅调用构造方法，没有进行属性处理
     private Object doCreateBean(BeanDefinition bd) {
         Class<?> clz = null;
         Object obj = null;
@@ -153,12 +170,12 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
             clz = Class.forName(bd.getClassName());
 
             //handle constructor
-            ArgumentValues argumentValues = bd.getConstructorArgumentValues();
+            ConstructorArgumentValues argumentValues = bd.getConstructorArgumentValues();
             if (!argumentValues.isEmpty()) {
                 Class<?>[] paramTypes = new Class<?>[argumentValues.getArgumentCount()];
                 Object[] paramValues =   new Object[argumentValues.getArgumentCount()];
                 for (int i=0; i<argumentValues.getArgumentCount(); i++) {
-                    ArgumentValue argumentValue = argumentValues.getIndexedArgumentValue(i);
+                    ConstructorArgumentValue argumentValue = argumentValues.getIndexedArgumentValue(i);
                     if ("String".equals(argumentValue.getType()) || "java.lang.String".equals(argumentValue.getType())) {
                         paramTypes[i] = String.class;
                         paramValues[i] = argumentValue.getValue();
@@ -205,6 +222,10 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
 
         return obj;
 
+    }
+
+    private void populateBean(BeanDefinition bd, Class<?> clz, Object obj) {
+        handleProperties(bd, clz, obj);
     }
 
     private void handleProperties(BeanDefinition bd, Class<?> clz, Object obj) {
@@ -274,4 +295,11 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
         }
 
     }
+
+    abstract public Object applyBeanPostProcessorsBeforeInitialization(Object existingBean, String beanName)
+            throws BeansException;
+
+    abstract public Object applyBeanPostProcessorsAfterInitialization(Object existingBean, String beanName)
+            throws BeansException;
+
 }

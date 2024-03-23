@@ -1,6 +1,7 @@
 package com.minis.test;
 
 public class BaseBaseService {
+
 	private AServiceImpl as;
 	
 	public AServiceImpl getAs() {
