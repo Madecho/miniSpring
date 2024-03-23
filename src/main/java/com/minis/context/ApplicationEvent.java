@@ -2,12 +2,14 @@ package com.minis.context;
 
 import java.util.EventObject;
 
-/**
- * 监控容器的启动状态，增加事件监听
- */
-public class ApplicationEvent  extends EventObject {
+public class ApplicationEvent extends EventObject {
+
     private static final long serialVersionUID = 1L;
+    protected String msg = null;
+
     public ApplicationEvent(Object arg0) {
         super(arg0);
+        this.msg = arg0.toString();
     }
+
 }
