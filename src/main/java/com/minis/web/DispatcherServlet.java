@@ -48,6 +48,7 @@ public class DispatcherServlet extends HttpServlet {
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
 
+		// 从 sevletContext 里获取属性拿到 WAC，放到 servlet 的属性中
 		this.webApplicationContext = (WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
 
 		sContextConfigLocation = config.getInitParameter("contextConfigLocation");
@@ -59,6 +60,7 @@ public class DispatcherServlet extends HttpServlet {
 			e.printStackTrace();
 		}
 
+		// 然后拿到 Servlet 的配置路径参数，之后再扫描路径下的包，调用 refresh() 方法加载 Bean，最后配置 url mapping
 		this.packageNames = XmlScanComponentHelper.getNodeValue(xmlPath);
 
 		Refresh();

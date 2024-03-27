@@ -8,6 +8,8 @@ import javax.servlet.ServletContextListener;
 
 public class ContextLoaderListener implements ServletContextListener {
 	public static final String CONFIG_LOCATION_PARAM = "contextConfigLocation";
+
+	// 这是个IOC容器，加载所管理的Bean对象，并把WAC关联到servlet context里
 	private WebApplicationContext context;
 	
 	public ContextLoaderListener() {
