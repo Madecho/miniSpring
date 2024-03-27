@@ -1,6 +1,6 @@
-package com.minis.test;
+package com.minis.test.service;
 
-public class AServiceImpl implements AService{
+public class AServiceImpl implements AService {
 	private String name;
 	private int level;
 	private String property1;
