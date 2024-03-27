@@ -1,8 +1,11 @@
 package com.minis.test;
+
 import com.minis.beans.factory.annotation.Autowired;
+
 public class BaseService {
 	@Autowired
 	private BaseBaseService bbs;
+	
 	public BaseBaseService getBbs() {
 		return bbs;
 	}
@@ -12,7 +15,7 @@ public class BaseService {
 	public BaseService() {
 	}
 	public void sayHello() {
-		System.out.println("Base Service says Hello");
+		System.out.print("Base Service says hello");
 		bbs.sayHello();
 	}
 }
