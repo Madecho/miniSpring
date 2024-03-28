@@ -1,12 +1,8 @@
 package com.minis.web.servlet;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+
 import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -15,10 +11,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.minis.beans.BeansException;
-import com.minis.web.AnnotationConfigWebApplicationContext;
-import com.minis.web.XmlScanComponentHelper;
 import com.minis.web.context.WebApplicationContext;
-
+import com.minis.web.context.support.AnnotationConfigWebApplicationContext;
+import com.minis.web.method.HandlerMethod;
+import com.minis.web.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * Servlet implementation class DispatcherServlet
@@ -26,17 +22,29 @@ import com.minis.web.context.WebApplicationContext;
 public class DispatcherServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	public static final String WEB_APPLICATION_CONTEXT_ATTRIBUTE = DispatcherServlet.class.getName() + ".CONTEXT";
+	public static final String HANDLER_MAPPING_BEAN_NAME = "handlerMapping";
+	public static final String HANDLER_ADAPTER_BEAN_NAME = "handlerAdapter";
+	public static final String MULTIPART_RESOLVER_BEAN_NAME = "multipartResolver";
+	public static final String LOCALE_RESOLVER_BEAN_NAME = "localeResolver";
+	public static final String HANDLER_EXCEPTION_RESOLVER_BEAN_NAME = "handlerExceptionResolver";
+	public static final String REQUEST_TO_VIEW_NAME_TRANSLATOR_BEAN_NAME = "viewNameTranslator";
+	public static final String VIEW_RESOLVER_BEAN_NAME = "viewResolver";
+	private static final String DEFAULT_STRATEGIES_PATH = "DispatcherServlet.properties";
+	private static final Properties defaultStrategies = null;
+
 	private WebApplicationContext webApplicationContext;
 	private WebApplicationContext parentApplicationContext;
 
 	private String sContextConfigLocation;
-	private List<String> packageNames = new ArrayList<>();
-	private Map<String,Object> controllerObjs = new HashMap<>();
-	private List<String> controllerNames = new ArrayList<>();
-	private Map<String,Class<?>> controllerClasses = new HashMap<>();
+
+	//private MultipartResolver multipartResolver;
+	//private LocaleResolver localeResolver;
+	//private HandlerExceptionResolver handlerExceptionResolvers;
+	//private RequestToViewNameTranslator viewNameTranslator;
 
 	private HandlerMapping handlerMapping;
 	private HandlerAdapter handlerAdapter;
+	private ViewResolver viewResolver;
 
 	public DispatcherServlet() {
 		super();
@@ -46,75 +54,45 @@ public class DispatcherServlet extends HttpServlet {
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
 
-
 		this.parentApplicationContext =
 				(WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
 
-		sContextConfigLocation = config.getInitParameter("contextConfigLocation");
+		this.sContextConfigLocation = config.getInitParameter("contextConfigLocation");
 
-		URL xmlPath = null;
-		try {
-			xmlPath = this.getServletContext().getResource(sContextConfigLocation);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
+		this.webApplicationContext = new AnnotationConfigWebApplicationContext(this.sContextConfigLocation,this.parentApplicationContext);
 
-		this.packageNames = XmlScanComponentHelper.getNodeValue(xmlPath);
-
-		this.webApplicationContext = new AnnotationConfigWebApplicationContext(sContextConfigLocation,this.parentApplicationContext);
-
-
-		refresh();
+		Refresh();
 
 	}
 
-	protected void refresh() {
-		initController();
-
-//		initHandlerMappings(this.webApplicationContext);
-//		initHandlerAdapters(this.webApplicationContext);
-
-
-		/**
-		 * 这两个容器一个是配置文件applicationContext.xml解析bean容器，一个是包扫描controller的bean容器。
-		 * 而webBindingInitializer这个bean的定义在applicationContext.xml配置文件中，所以传入webApplicationContext
-		 * 这个容器对象是获取不到的。改为parentApplicationContext就可以正确执行下去
-		 */
+	protected void Refresh() {
 		initHandlerMappings(this.webApplicationContext);
-		initHandlerAdapters(this.parentApplicationContext);
-
-//		initViewResolvers(this.webApplicationContext);
+		initHandlerAdapters(this.webApplicationContext);
+		initViewResolvers(this.webApplicationContext);
 	}
 
 	protected void initHandlerMappings(WebApplicationContext wac) {
-		this.handlerMapping = new RequestMappingHandlerMapping(wac);
+		try {
+			this.handlerMapping = (HandlerMapping) wac.getBean(HANDLER_MAPPING_BEAN_NAME);
+		} catch (BeansException e) {
+			e.printStackTrace();
+		}
 
 	}
 	protected void initHandlerAdapters(WebApplicationContext wac) {
-		this.handlerAdapter = new RequestMappingHandlerAdapter(wac);
-
-	}
-
-	protected void initViewResolvers(WebApplicationContext wac) {
-
-	}
-
-	protected void initController() {
-		this.controllerNames = Arrays.asList(this.webApplicationContext.getBeanDefinitionNames());
-		for (String controllerName : this.controllerNames) {
-			try {
-				this.controllerClasses.put(controllerName,Class.forName(controllerName));
-			} catch (ClassNotFoundException e1) {
-				e1.printStackTrace();
-			}
-			try {
-				this.controllerObjs.put(controllerName,this.webApplicationContext.getBean(controllerName));
-				System.out.println("controller : "+controllerName);
-			} catch (BeansException e) {
-				e.printStackTrace();
-			}
+		try {
+			this.handlerAdapter = (HandlerAdapter) wac.getBean(HANDLER_ADAPTER_BEAN_NAME);
+		} catch (BeansException e) {
+			e.printStackTrace();
 		}
 
+	}
+	protected void initViewResolvers(WebApplicationContext wac) {
+		try {
+			this.viewResolver = (ViewResolver) wac.getBean(VIEW_RESOLVER_BEAN_NAME);
+		} catch (BeansException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -133,6 +111,7 @@ public class DispatcherServlet extends HttpServlet {
 	protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		HttpServletRequest processedRequest = request;
 		HandlerMethod handlerMethod = null;
+		ModelAndView mv = null;
 
 		handlerMethod = this.handlerMapping.getHandler(processedRequest);
 		if (handlerMethod == null) {
@@ -141,8 +120,36 @@ public class DispatcherServlet extends HttpServlet {
 
 		HandlerAdapter ha = this.handlerAdapter;
 
-		ha.handle(processedRequest, response, handlerMethod);
+		mv = ha.handle(processedRequest, response, handlerMethod);
+
+		render(processedRequest, response, mv);
 	}
+
+	protected void render( HttpServletRequest request, HttpServletResponse response,ModelAndView mv) throws Exception {
+		if (mv == null) {
+			response.getWriter().flush();
+			response.getWriter().close();
+			return;
+		}
+
+		String sTarget = mv.getViewName();
+		Map<String, Object> modelMap = mv.getModel();
+		View view = resolveViewName(sTarget, modelMap, request);
+		view.render(modelMap, request, response);
+
+	}
+
+	protected View resolveViewName(String viewName, Map<String, Object> model,
+								   HttpServletRequest request) throws Exception {
+		if (this.viewResolver != null) {
+			View view = viewResolver.resolveViewName(viewName);
+			if (view != null) {
+				return view;
+			}
+		}
+		return null;
+	}
+
 
 
 }

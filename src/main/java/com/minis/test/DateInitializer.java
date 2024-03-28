@@ -1,8 +1,8 @@
 package com.minis.test;
 
 import java.util.Date;
-import com.minis.web.WebBindingInitializer;
-import com.minis.web.WebDataBinder;
+import com.minis.web.bind.support.WebBindingInitializer;
+import com.minis.web.bind.WebDataBinder;
 
 public class DateInitializer implements WebBindingInitializer{
   public void initBinder(WebDataBinder binder) {

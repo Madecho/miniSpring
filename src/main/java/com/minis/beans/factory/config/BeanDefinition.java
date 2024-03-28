@@ -31,6 +31,9 @@ public class BeanDefinition {
         this.className = className;
     }
 
+    public BeanDefinition() {
+    }
+
     public BeanDefinition(String id, String className) {
         this.id = id;
         this.className = className;

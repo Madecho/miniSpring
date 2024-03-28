@@ -9,7 +9,7 @@ public class SimpleApplicationEventPublisher implements ApplicationEventPublishe
 	@Override
 	public void publishEvent(ApplicationEvent event) {
 		for (ApplicationListener listener : listeners) {
-			listener.onApplicationEvent(event);			
+			listener.onApplicationEvent(event);
 		}
 	}
 

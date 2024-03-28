@@ -1,6 +1,4 @@
-
-
-package com.minis.web;
+package com.minis.web.context.support;
 
 
 import java.io.File;
@@ -17,20 +15,14 @@ import com.minis.beans.factory.config.BeanDefinition;
 import com.minis.beans.factory.config.BeanFactoryPostProcessor;
 import com.minis.beans.factory.config.ConfigurableListableBeanFactory;
 import com.minis.beans.factory.support.DefaultListableBeanFactory;
-import com.minis.context.AbstractApplicationContext;
-import com.minis.context.ApplicationEvent;
-import com.minis.context.ApplicationEventPublisher;
-import com.minis.context.ApplicationListener;
-import com.minis.context.SimpleApplicationEventPublisher;
+import com.minis.context.*;
+import com.minis.test.MyListener;
 import com.minis.web.context.WebApplicationContext;
 
-/**
- * 该类其实质就是我们 IoC 容器中的 ClassPathXmlApplicationContext，只是在此基础上增加了
- * servletContext 的属性，这样就成了一个适用于 Web 场景的上下文
- */
+
 
 public class AnnotationConfigWebApplicationContext
-        extends AbstractApplicationContext implements WebApplicationContext {
+        extends AbstractApplicationContext implements WebApplicationContext{
     private WebApplicationContext parentApplicationContext;
     private ServletContext servletContext;
     DefaultListableBeanFactory beanFactory;
@@ -72,12 +64,12 @@ public class AnnotationConfigWebApplicationContext
 
     public void loadBeanDefinitions(List<String> controllerNames) {
         for (String controller : controllerNames) {
-            String beanID = controller;
-            String beanClassName = controller;
+            String beanID=controller;
+            String beanClassName=controller;
 
-            BeanDefinition beanDefinition = new BeanDefinition(beanID, beanClassName);
+            BeanDefinition beanDefinition=new BeanDefinition(beanID,beanClassName);
 
-            this.beanFactory.registerBeanDefinition(beanID, beanDefinition);
+            this.beanFactory.registerBeanDefinition(beanID,beanDefinition);
         }
     }
 
@@ -92,13 +84,13 @@ public class AnnotationConfigWebApplicationContext
 
     private List<String> scanPackage(String packageName) {
         List<String> tempControllerNames = new ArrayList<>();
-        URL url = this.getClass().getClassLoader().getResource("/" + packageName.replaceAll("\\.", "/"));
+        URL url  =this.getClass().getClassLoader().getResource("/"+packageName.replaceAll("\\.", "/"));
         File dir = new File(url.getFile());
         for (File file : dir.listFiles()) {
-            if (file.isDirectory()) {
-                scanPackage(packageName + "." + file.getName());
-            } else {
-                String controllerName = packageName + "." + file.getName().replace(".class", "");
+            if(file.isDirectory()){
+                scanPackage(packageName+"."+file.getName());
+            }else{
+                String controllerName = packageName +"." +file.getName().replace(".class", "");
                 tempControllerNames.add(controllerName);
             }
         }
@@ -126,15 +118,28 @@ public class AnnotationConfigWebApplicationContext
         this.getApplicationEventPublisher().publishEvent(event);
     }
 
+
     @Override
-    public void addApplicationListener(ApplicationListener listener) {
+    public void addApplicationListener(ApplicationListener<?> listener) {
         this.getApplicationEventPublisher().addApplicationListener(listener);
     }
 
     @Override
     public void registerListeners() {
-        ApplicationListener listener = new ApplicationListener();
-        this.getApplicationEventPublisher().addApplicationListener(listener);
+        String[] bdNames = this.beanFactory.getBeanDefinitionNames();
+        for (String bdName : bdNames) {
+            Object bean = null;
+            try {
+                bean = getBean(bdName);
+            } catch (BeansException e1) {
+                e1.printStackTrace();
+            }
+
+            if (bean instanceof ApplicationListener) {
+                this.getApplicationEventPublisher().addApplicationListener((ApplicationListener<?>)bean);
+            }
+        }
+
     }
 
     @Override
@@ -159,8 +164,7 @@ public class AnnotationConfigWebApplicationContext
 
     @Override
     public void finishRefresh() {
-        // TODO Auto-generated method stub
-
+        publishEvent(new ContextRefreshedEvent(this));
     }
 
     @Override

@@ -1,21 +1,15 @@
-package com.minis.web;
+package com.minis.beans;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.minis.beans.AbstractPropertyAccessor;
-import com.minis.beans.PropertyEditor;
-import com.minis.beans.PropertyEditorRegistrySupport;
-import com.minis.beans.PropertyValue;
-import com.minis.beans.PropertyValues;
-
 public class BeanWrapperImpl extends AbstractPropertyAccessor {
 	Object wrappedObject;
 	Class<?> clz;
-	
+
 	public BeanWrapperImpl(Object object) {
-		super();	
+		super();
 		this.wrappedObject = object;
 		this.clz = object.getClass();
 	}
@@ -26,14 +20,14 @@ public class BeanWrapperImpl extends AbstractPropertyAccessor {
 		PropertyEditor pe = this.getCustomEditor(propertyHandler.getPropertyClz());
 		if (pe == null) {
 			pe = this.getDefaultEditor(propertyHandler.getPropertyClz());
-			
+
 		}
 		if (pe != null) {
 			pe.setAsText((String) pv.getValue());
 			propertyHandler.setValue(pe.getValue());
 		}
 		else {
-			propertyHandler.setValue(pv.getValue());			
+			propertyHandler.setValue(pv.getValue());
 		}
 
 	}
@@ -42,7 +36,7 @@ public class BeanWrapperImpl extends AbstractPropertyAccessor {
 		Method writeMethod = null;
 		Method readMethod = null;
 		Class<?> propertyClz = null;
-		
+
 		public Class<?> getPropertyClz() {
 			return propertyClz;
 		}
@@ -60,13 +54,13 @@ public class BeanWrapperImpl extends AbstractPropertyAccessor {
 			} catch (NoSuchFieldException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} 
+			}
 		}
-		
+
 		public Object getValue() {
 			Object result = null;
 			writeMethod.setAccessible(true);
-			
+
 			try {
 				result =  readMethod.invoke(wrappedObject);
 			} catch (IllegalAccessException e) {
@@ -81,16 +75,16 @@ public class BeanWrapperImpl extends AbstractPropertyAccessor {
 		}
 
 		public void setValue(Object value) {
-				writeMethod.setAccessible(true);
-				try {
-					writeMethod.invoke(wrappedObject, value);
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-				} catch (IllegalArgumentException e) {
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					e.printStackTrace();
-				}
+			writeMethod.setAccessible(true);
+			try {
+				writeMethod.invoke(wrappedObject, value);
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			}
 		}
 
 	}
