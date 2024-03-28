@@ -10,8 +10,9 @@ import com.minis.beans.factory.config.AbstractAutowireCapableBeanFactory;
 import com.minis.beans.factory.config.BeanDefinition;
 import com.minis.beans.factory.config.ConfigurableListableBeanFactory;
 
-public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory 
-					implements ConfigurableListableBeanFactory{
+public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory
+		implements ConfigurableListableBeanFactory{
+	ConfigurableListableBeanFactory parentBeanFctory;
 
 	@Override
 	public int getBeanDefinitionCount() {
@@ -20,7 +21,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 	@Override
 	public String[] getBeanDefinitionNames() {
-		return (String[]) this.beanDefinitionNames.toArray();
+		return (String[])this.beanDefinitionNames.toArray(new String[this.beanDefinitionNames.size()]);
 	}
 
 	@Override
@@ -58,8 +59,29 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		return result;
 	}
 
+	public void setParent(ConfigurableListableBeanFactory beanFactory) {
+		this.parentBeanFctory = beanFactory;
+	}
+
+	/**
+	 * 当调用 getBean() 获取 Bean 时，先从 WebApplicationContext 中获取，若为空则通过 parentApplicationContext 获取
+	 * @param beanName
+	 * @return
+	 * @throws BeansException
+	 */
+	@Override
+	public Object getBean(String beanName) throws BeansException{
+		Object result = super.getBean(beanName);
+		if (result == null) {
+			result = this.parentBeanFctory.getBean(beanName);
+		}
+
+		return result;
+	}
+
 	@Override
 	public void registerDependentBean(String beanName, String dependentBeanName) {
+
 	}
 
 	@Override
