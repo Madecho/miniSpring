@@ -2,8 +2,15 @@ package com.minis.test;
 
 import com.minis.web.RequestMapping;
 
+import java.util.Date;
+
 
 public class HelloWorldBean {
+
+//	@RequestMapping("/test4")
+//	public String doTest4(CustomDateEditor date) {
+//		return "Hello Madecho";
+//	}
 
 	@RequestMapping("/test3")
 	public String doTest3() {

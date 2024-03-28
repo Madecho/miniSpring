@@ -71,9 +71,19 @@ public class DispatcherServlet extends HttpServlet {
 	protected void refresh() {
 		initController();
 
+//		initHandlerMappings(this.webApplicationContext);
+//		initHandlerAdapters(this.webApplicationContext);
+
+
+		/**
+		 * 这两个容器一个是配置文件applicationContext.xml解析bean容器，一个是包扫描controller的bean容器。
+		 * 而webBindingInitializer这个bean的定义在applicationContext.xml配置文件中，所以传入webApplicationContext
+		 * 这个容器对象是获取不到的。改为parentApplicationContext就可以正确执行下去
+		 */
 		initHandlerMappings(this.webApplicationContext);
-		initHandlerAdapters(this.webApplicationContext);
-		initViewResolvers(this.webApplicationContext);
+		initHandlerAdapters(this.parentApplicationContext);
+
+//		initViewResolvers(this.webApplicationContext);
 	}
 
 	protected void initHandlerMappings(WebApplicationContext wac) {
@@ -84,6 +94,7 @@ public class DispatcherServlet extends HttpServlet {
 		this.handlerAdapter = new RequestMappingHandlerAdapter(wac);
 
 	}
+
 	protected void initViewResolvers(WebApplicationContext wac) {
 
 	}
