@@ -69,6 +69,7 @@ public class RequestMappingHandlerAdapter implements HandlerAdapter,ApplicationC
 		for (Parameter methodParameter : methodParameters) {
 			if (methodParameter.getType()!=HttpServletRequest.class && methodParameter.getType()!=HttpServletResponse.class) {
 				Object methodParamObj = methodParameter.getType().newInstance();
+				// 参数绑定的处理，是在 RequestMappingHandlerAdatper 的 invokeHandlerMethod() 方法中处理的，它拿到调用方法的所有参数，一个参数一个参数进行绑定
 				WebDataBinder wdb = binderFactory.createBinder(request, methodParamObj, methodParameter.getName());
 				webBindingInitializer.initBinder(wdb);
 				wdb.bind(request);
